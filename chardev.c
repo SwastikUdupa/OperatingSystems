@@ -67,3 +67,32 @@ static int device_open(struct inode *inode, struct file *file)
 
 	return SUCCESS;
 }
+
+static int device_release(struct inode* inode, struct file *file)
+{
+  Device_Open--;
+  module_put(THIS_MODULE);
+  return 0;
+}
+
+//the process is called when a program attempts to write the device
+static ssize_t device_read(struct file *filp,char *buffer,size_t length,loff_t * offset) //length refers to length of buffer
+{
+  int bytes_read = 0; //Refers to the number of bytes written to the buffer
+  if(*msg_Ptr==0)
+    return 0; //indicates that we have reached the end of the file
+  while(length && *msg_Ptr)
+  {
+    //we use the put_user because the buffer is in the user segment whereas the msg_Ptr is in the kernel segment
+    put_user(*(msg_Ptr++), buffer++); //copies the message from the msgptr to the buffer
+    length--;
+    bytes_read++;
+  }
+  return bytes_read;
+}
+
+static ssize_t device_write(struct file *filp, const char *buff, size_t len, loff_t * off)
+{
+	printk(KERN_ALERT "Sorry, this operation isn't supported.\n");
+	return -EINVAL;
+}
